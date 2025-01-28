@@ -1,0 +1,180 @@
+---
+title: "homework_2"
+output: html_document
+date: "2025-01-23"
+---
+
+```{r, echo = FALSE, warning = FALSE}
+profs <- read.csv("profs.csv")
+bikeshare <- read.csv("bikeshare.csv")
+capmetro_UT <- read.csv("capmetro_UT.csv")
+billboard <- read.csv("billboard.csv")
+library(ggplot2)
+library(dplyr)
+library(knitr)
+```
+
+# **Problem 1**
+## **Part A**
+```{r, echo = FALSE}
+#This is a histogram of the  course evaluation scores
+ggplot(profs, aes(x = eval)) + geom_histogram(bins = 20, fill = 'pink') + labs(title = "Distribution of course evalutation scores", x = "Average evaluation score", y = "Frequency")
+```
+
+
+This histogram shows the distribution of the course evaluation scores for different professors. This graph is skewed left with more professors having a higher score of four and five rather than two or three. The most frequent course evaluation is the score of four. 
+
+
+
+## **Part B** 
+```{r, echo = FALSE}
+#This is a side by side boxplot of coarse evaluations based on if the professor is a native English speaker 
+ggplot(profs, aes(x= native, y = eval)) + geom_boxplot(fill = 'lightgreen') + labs(title = "Distribuation of course evaluation scores by native speaker status", x = "Native Speaker status", y = "Average course evaluation")
+```
+
+
+This shows that professor that are native English speakers seem to have slightly higher course evaluations. There are outliars for the native English speaking professor.  
+
+## **Part C** 
+```{r, echo = FALSE}
+#This creates a histogram of the evaluation scores by gender
+ggplot(profs, aes(x= eval)) + geom_histogram(bins = 30, fill = 'lightblue') + facet_wrap("gender", nrow = 2) + labs(title = "Distribuation of course evaluation scores by gender", x = "Average Evaluation Score", y = "Frequency")
+```
+
+
+Both graphs are skewed left. Both male and female have a similar distribution. Male has a couple of outliars around the lower evaluation scores. 
+
+## **Part D**
+```{r, echo = FALSE}
+ggplot(profs, aes(x = beauty, y = eval)) + geom_point() +labs(title = "Relationship between course evaluation and physical attractiveness", x = "Physical Attractiveness", y = "Average Course Evaluation")
+```
+
+
+This graph shows there isn't a strong correlation between physical attractiveness and average course evaluation. This shows that students don't base their evaluations on the professor's attractiveness. 
+# **Problem 2**
+
+## **Plot A**
+```{r, echo = FALSE}
+#group by the hours
+summary <- bikeshare %>%
+  group_by(hr) %>%
+  summarize(total_rentals = mean(total))
+#Create a line graph that shows the average hourly bike rentals
+ggplot(summary, aes(x = hr, y = total_rentals)) + geom_line() + labs(title = "Average Hourly bike rentals", x = "Hours", y = "Total rentals") 
+```
+
+
+This graph shows two peaks of bike rentals between 5 and 10 and 15 and 20 hours. There seems to be few rentals under five hours.
+
+
+## **Plot B**
+```{r, echo = FALSE}
+#Group by hour and workingday
+summary <- bikeshare %>%
+  group_by(hr, workingday) %>%
+  summarize(total_rentals = mean(total))
+#Create a line graph of hourly bike rentals by working day
+ggplot(summary, aes(x = hr, y = total_rentals)) + geom_line() + labs(title = "Average hourly bike rental by working day", x = "Hour", y = "Average rental") +  facet_wrap("workingday", labeller = labeller(workingday = c('0' = "Non-Working Day", '1' = "Working Day")))
+```
+
+These graphs show that there are more bike rentals during working days. This would make sense as more people are more likely to need bikes on the weekdays. There are two peaks during the work day between 5 and 10 and 15 and 20 hours. For the non- working day there is a peak at between 10 and 15. 
+## **Plot C**
+```{r, echo = FALSE}
+#Filters only the 9 am bike rentals
+early_rides <- bikeshare%>%
+  filter(hr == 9) %>%
+  group_by(weathersit, workingday) %>%
+  summarize(avg = mean(total), .groups = "drop")
+#Create a bar graph of the average ridership during 9 am based on weather situation day by working day
+ggplot(early_rides, aes(x = factor(weathersit), y = avg, fill = factor(workingday))) + geom_bar(stat = 'identity') + labs(title = "Average ridership during 9AM by weather situation", x = "Weather Situation", y = "Average Ridership", fill = "Working Day") + facet_wrap("workingday", labeller = labeller(workingday = c('0' = "Non-Working Day", '1' = "Working Day")))
+```
+
+
+This shows that on working days with good weather more people rent bikes. Both graphs show that more people use the bikes with less intense weather. The worse the weather, the less likely one is to use a bike. This is most likely due to dangerous conditions. 
+# **Problem 3**
+
+## **Question 1**
+```{r, echo = FALSE}
+#Put the monthes and days in ordwe
+capmetro_UT = mutate(capmetro_UT,
+day_of_week = factor(day_of_week,
+levels=c("Mon", "Tue", "Wed","Thu", "Fri", "Sat", "Sun")),
+month = factor(month,
+levels=c("Sep", "Oct","Nov")))
+capmetro_avg <- capmetro_UT %>%
+  group_by(hour_of_day, month, day_of_week) %>%
+  summarize(avgboarding = mean(boarding))
+#Create line graphs for each day of the week showing the boardings by month. 
+ggplot(capmetro_avg, aes(x = hour_of_day, y = avgboarding, color = month)) + geom_line() + facet_wrap(~day_of_week) + labs(title = "Average boardings by hour of day, day of week, and month", x = "Hour of day", y = "Average boardings")
+```
+
+
+There is a great decline in the average boardings during the weekend. This is likely due to it not being work days. On Mondays it is evident that there are less boardings in september compared to the other months. This could be due to Labor day. This means one more day off of work. 
+
+## **Question 2**
+```{r, echo = FALSE}
+ggplot(capmetro_UT, aes(x = temperature, y = boarding, color = weekend)) + geom_point() +  facet_wrap(~hour_of_day) +labs(title = "Boardings vs. Temperature by day of week", x = "Temperature", y = "Boardings")
+```
+
+
+These graphs show that there are very few people who board at 6-9 am and then the number rises and starts slightly falling at 7pm. The graphs also show that more people board during the weekday. The weekends are always at very low amounts. This most likely correlates with working hours. 
+
+# **Problem 4**
+
+## **Part A**
+```{r, echo = FALSE}
+#Creates a table of the 10 most popular songs
+popular <- billboard %>%
+  group_by(song, performer) %>%
+  summarize(total_weeks = n(), .groups = "drop") %>%
+  arrange(desc(total_weeks)) %>%
+  slice_head(n=10)
+  
+kable(popular, col.names = c("Song" , "Performer", "Total Weeks") )
+```
+
+
+This table shows the song, performer and total weeks for the top 10 songs on the billboard.Imagine Dragons is at the top with the song Radioactive with 87 total weeks. 
+
+
+## **Part B**
+```{r, echo = FALSE}
+#Filter out data from 1958 and 2021
+filtered_data <- billboard %>%
+  filter(year!= 1958 & year !=2021)
+#group by song and year
+unique_songs <- filtered_data %>%
+  group_by(song, year) %>%
+  summarize(count = n(), .groups = "drop")
+#how many unique songs for each year
+unique_songs_per_year <- unique_songs%>%
+  group_by(year) %>%
+  summarize(unique_count = n_distinct(song), .groups = "drop")
+#create a line graph of the unique songs throughout the years
+ggplot(unique_songs_per_year, aes(x= year, y= unique_count))+ geom_line() + labs(title = "Musical Diversity over the years", x = "Year", y = "Number of Unique songs")
+```
+
+
+
+This graph shows a peak of unique songs between 1960 and 1980. The amount of unique songs declines after and reaches a low around 2000. It them climbes back up up to 2020. 
+
+## **Part C**
+```{r, echo = FALSE}
+#Filter the data only for songs that were on the charts for over 10 weeks
+hits_data <- filter(billboard, weeks_on_chart >= 10)
+  
+hits_data_grouped <- group_by(hits_data, performer, song) 
+
+hits_data_summarized <- summarize(hits_data_grouped, hit_count = 1, .groups = "drop") 
+
+hits_data_final <- group_by(hits_data_summarized, performer)
+hits_data_total_hits <- summarize(hits_data_final, total_hits = n(), .groups = "drop")
+#Filter out only artists who had a hit song over 30 times 
+hits_data_filtered <- filter(hits_data_total_hits, total_hits >= 30)
+
+#Create a bar graph of these artists   
+ggplot(hits_data_filtered, aes(x = performer, y = total_hits)) + geom_bar(stat = "identity") + labs(title = "Ten Week Hits", x = "Artist", y = "Count of Ten week hits")+ coord_flip() 
+```
+
+
+This graph shows the 19 artists who have had at least 30 of their songs on the billboard for at least 10 weeks. Elton John has the most amount of ten week hits reaching over 50. 
