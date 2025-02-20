@@ -1,0 +1,166 @@
+---
+title: "homework_4"
+output: pdf_document
+date: "2025-02-18"
+---
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE
+  )
+```
+
+```{r}
+library(mosaic)
+library(tidyverse)
+library(knitr)
+```
+
+
+# **Problem 1**
+```{r}
+#Simulate amount of times that a trade gets flagged out of 2021 times with a probability of 2.4%. Run this simulation 100,000 times. 
+flagged = do(100000)*nflip(n=2021, prob=.024)
+
+#Find the pvalue as a proportion to the amount of times the simulation was done. 
+sum_flagged = sum(flagged >= 70)/100000
+
+#Create a histogram of the distribution
+ggplot(flagged, aes(x = nflip)) + geom_histogram(fill = "lightblue", color = "black")
+
+
+```
+
+The null hypothesis is that the number of flagged trades from the Iron Bank employees is equal to the baseline rate of 2.4%. The test statistic is the observed data proportion to the expected. The p-value is `r sum_flagged`. Because this p-value is so small we would reject the null hypothesis. This means that the flagged trades are higher than the baseline rate of 2.4%.
+
+
+# **Problem 2**
+```{r}
+#Run a simulation of if there is a health code violation out of 50 with a probability of 3%. Run this simulation 100,000 times. 
+sim_health = do(100000)*nflip(n = 50, prob = .03)
+
+#Create a histogram of the distribution
+ggplot(sim_health, aes(x = nflip)) + geom_histogram(fill = "lavender", color = "black")
+
+#Find the p-value
+p_value = sum(sim_health >= 8)/100000
+
+```
+
+
+The null hypothesis is that Gourmet Bites' health code violation is the same as the average violation rate  of 3%. The test statistic is the observed number violations. The p value is `r p_value`. This p value rejects the null hypothesis meaning that Gourmet bites has a higher health code violation rate than the city average. 
+
+
+# **Problem 3**
+```{r}
+#Set expected values for each group
+expected_distribution = c(group1 = .3, group2 = .25, group3 = .2, group4 = .15, group5 = .1)
+
+#Set observed values for each group
+observed_counts = c(group1 = 85, group2 = 56, group3 = 59, group4 = 27, group5 = 13)
+
+#Get the total number of observations
+num_people = sum(observed_counts)
+
+#Create a function that calculates the chi square statistic
+chi_squared_statistic = function(observed, expected) {
+  sum((observed - expected)^2 / expected)
+}
+
+#Compute chi squared for the observed data
+expected_counts = num_people*expected_distribution
+chi2 = chi_squared_statistic(observed_counts, expected_counts)
+
+#Stimulate null distribution under H0
+num_simulations = 10000
+chi2_sim = do(num_simulations)*{
+  simulated_counts = rmultinom(1, num_people, expected_distribution)
+  this_chi2 = chi_squared_statistic(simulated_counts, num_people*expected_distribution)
+  c(chi2 = this_chi2) 
+}
+
+
+p_value = sum(chi2_sim$chi2 >= chi2)/100000
+
+```
+
+The null hypothesis is that the racial composition of juries selected by the judge follows the same distribution as the county's eligible jury population. The test statistic I used was chi squared. The p-value is `r p_value`, which rejects the null hypothesis. This means the jury selection did not follow the county's race distribution. 
+
+
+
+# **Problem 4**
+
+## **Part A**
+```{r}
+sentences <- readLines("brown_sentences.txt")
+letter_frequencies = read.csv("letter_frequencies.csv")
+
+chi_square_stats <- sapply(sentences, function(sentence) {
+  clean_sentence <- gsub("[^A-Za-z]", "", sentence)
+  clean_sentence <- toupper(clean_sentence)
+  
+  observed_counts <- table(factor(strsplit(clean_sentence, "")[[1]], levels = LETTERS))
+  total_letters <- sum(observed_counts)
+  expected_counts <- total_letters * letter_frequencies$Probability
+  sum((observed_counts - expected_counts)^2 / expected_counts)
+})
+
+chi_square <- data.frame(Sentence = sentences, ChiSquared = chi_square_stats)
+ggplot(chi_square, aes(x = ChiSquared)) + geom_histogram(fill = "lightgreen", color = "black")+ labs(title = "Chi Square stats of the sentences", x = "ChiSquare", y = "count")
+
+  
+
+
+```
+
+## **Part B**
+
+
+```{r}
+sentences <- c(
+  "She opened the book and started to read the first chapter, eagerly anticipating what might come next.",
+  "Despite the heavy rain, they decided to go for a long walk in the park, crossing the main avenue by the fountain in the center.",
+  "The museum’s new exhibit features ancient artifacts from various civilizations around the world.",
+  "He carefully examined the document, looking for any clues that might help solve the mystery.",
+  "The students gathered in the auditorium to listen to the guest speaker’s inspiring lecture.",
+  "Feeling vexed after an arduous and zany day at work, she hoped for a peaceful and quiet evening at home, cozying up after a quick dinner with some TV, or maybe a book on her upcoming visit to Auckland.",
+  "The chef demonstrated how to prepare a delicious meal using only locally sourced ingredients, focusing mainly on some excellent dinner recipes from Spain.",
+  "They watched the sunset from the hilltop, marveling at the beautiful array of colors in the sky.",
+  "The committee reviewed the proposal and provided many points of useful feedback to improve the project’s effectiveness.",
+  "Despite the challenges faced during the project, the team worked tirelessly to ensure its successful completion, resulting in a product that exceeded everyone’s expectations."
+)
+
+
+compute_chi_square <- function(sentence, letter_frequencies){
+  clean_sentence <- gsub("[^A-Za-z]", "", sentence)
+  clean_sentence <- toupper(clean_sentence)
+  
+  observed_counts <- table(factor(strsplit(clean_sentence, "")[[1]], levels = LETTERS))
+  total_letters <- sum(observed_counts)
+  expected_counts <- total_letters * letter_frequencies$Probability
+  chi_sq_value <- sum((observed_counts - expected_counts)^2 / expected_counts)
+  
+  return(chi_sq_value)
+  
+}
+results <- data.frame(Sentence = sentences, ChiSquared = NA, PValue = NA)
+
+for(i in seq_along(sentences)){
+  chi_sq_value <- compute_chi_square(sentences[i], letter_frequencies)
+  
+  p_value <- mean(chi_square_stats >= chi_sq_value, na.rm = TRUE)
+  
+  results$ChiSquared[i] <- chi_sq_value
+  results$PValue[i] <- p_value
+}
+
+results$PValue <- round(results$PValue, 3)
+results$Sentence <- paste("Sentence", seq_len(nrow(results)))
+kable(results, col.names = c("Sentences", "Chi-Squared","P-Value"))
+```
+
+
+
+The sentence generated by an LLM is the sixth sentence. This is because the Chi Squared is significantly higher and the p-value is significantly lower than all the others. 
+
