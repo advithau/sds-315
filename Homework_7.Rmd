@@ -1,0 +1,141 @@
+---
+title: "homework_7"
+output: html_document
+date: "2025-04-06"
+---
+```{r}
+library(tidyverse)
+library(mosaic)
+library(MatchIt)
+```
+
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE
+  )
+```
+
+# **Problem 1**
+```{r}
+armfold <- read.csv("armfold.csv")
+```
+
+## **PArt A**
+```{r}
+n_female <- sum(armfold$Sex == "Female")
+n_female
+n_male <- sum(armfold$Sex == "Male")
+n_male
+
+prop_male <- prop(~LonR_fold, data = subset(armfold, Sex == "Male"))
+prop_male
+prop_female <- prop(~LonR_fold, data = subset(armfold, Sex == "Female"))
+prop_female
+```
+
+## **Part B**
+```{r}
+
+obs_diff <- prop_male - prop_female
+obs_diff
+```
+
+## **Part C**
+```{r}
+
+se_diff <- sqrt((prop_male * (1 - prop_male) / n_male + (prop_female *(1 - prop_female)) / n_female))
+se_diff
+
+prop.test(LonR_fold ~ Sex, data = armfold)
+
+
+
+```
+
+
+The formula for the standard error for the difference in proportions is the square root of p hat  times (1 minus p hat) all divided by N
+The values I plugged into the formula were the proportion of males which was 0.4716981 and the proportion of females witch is 0.4234234. The N for male was 106 and the N for females was 111. 
+
+
+I used the z value of 1.96 because we are calculating a 95% confidence interval. 
+
+## **Part D**
+If we were to compute this study repeatedly then we would expect that the true difference in proportions of males minus females who folded their left arm on top lies between -.093 and 0.190, with 95% confidence. 
+
+## **Part E**
+The standard error represents the spread of the difference in proportion in the two groups. It measures the difference in proportions of males and females who folded their left arm on top, showing that it would vary approximately by 0.067 if the sampling process was repeated multiple times. 
+
+## **Part F**
+In this context sampling distribution refers to the variability between each sample of the difference of proportions of males and females who put their left hand on top. The amount of males versus the amount of females who put their left arm on top varies from sample to sample. The true population proportion of males and females who fold their left arm on top stays fixed. 
+
+## **Part G**
+Central Limit theorem justifies using a normal distribution to approximate the sampling distribution of the difference in sample proportions. T
+
+# **Problem 2**
+
+```{r}
+turnout <- read.csv("turnout.csv")
+```
+
+## **Part A**
+```{r}
+prop_call <- prop(~voted1998, data = subset(turnout, GOTV_call == 1))
+prop_nocall <- prop(~voted1998, data = subset(turnout, GOTV_call == 0))
+
+prop.test(voted1998 ~ GOTV_call, data = turnout)
+
+diff_prop <- prop_call - prop_nocall
+
+se_diff <- sqrt((prop_call * (1-prop_call)) / n1  + (prop_nocall * (1- prop_nocall)) / n2)
+
+
+
+
+
+```
+
+
+## **Part B**
+```{r}
+ggplot(turnout, aes(x = factor(GOTV_call), fill = factor(voted1996))) + geom_bar(position = "fill") + labs(title = "proportion of people who got call by those who voted in 1996" , x = "Those who got the call" , y = "Proportion", fill = "voted1996")
+```
+
+```{r}
+ggplot(turnout, aes(x = factor(GOTV_call), y = AGE, fill = factor(GOTV_call))) + geom_boxplot() + labs(title = "Distibution of age by GOTV call status" , x = " GOTV call" , y ="Age", fill = "GOTV status")
+```
+
+```{r}
+ggplot(turnout, aes(x = factor(GOTV_call), fill = factor(MAJORPTY))) + geom_bar(position = "fill") + labs(title = "proportion of people who got call by whether a person is registered" , x = "GOTV call status", y = "Proportion" , fill = "Registered")
+```
+
+```{r}
+
+model <- glm(voted1998 ~ GOTV_call + AGE + MAJORPTY + voted1996, data = turnout, family = "binomial")
+confint(model)
+```
+
+
+## **Part C**
+```{r}
+voted_match = matchit(GOTV_call ~ voted1996 + AGE + MAJORPTY, data = turnout, ratio=5)
+summary(voted_match)
+
+voted_matched = match.data(voted_match)
+
+t.test(AGE~ GOTV_call, data = voted_matched)
+t.test(MAJORPTY~ GOTV_call, data = voted_matched)
+t.test(voted1996~ GOTV_call, data = voted_matched)
+
+
+prop_call <- prop(~voted1998, data = subset(voted_matched, GOTV_call == 1))
+prop_nocall <- prop(~voted1998, data = subset(voted_matched, GOTV_call == 0))
+
+prop.test(voted1998 ~ GOTV_call, data = voted_matched)
+
+
+
+```
+
