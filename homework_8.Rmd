@@ -1,0 +1,117 @@
+---
+title: "Homework_8"
+output: pdf_document
+date: "2025-04-13"
+---
+
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE
+  )
+```
+
+```{r}
+library(boot)
+library(mosaic)
+library(dplyr)
+library(ggplot2)
+```
+
+
+```{r}
+creatinine <- read.csv("creatinine.csv")
+```
+
+# **Problem 1**
+## **Part A**
+```{r}
+model <- lm(creatclear ~ age, data = creatinine)
+coeffs <- coef(model)
+coeff_tibble <- tibble(
+  intercept  = coeffs[1], 
+  slope = coeffs[2]
+)
+coeff_tibble
+```
+
+The equation to find the creatinine clearance rate for a 55 year old is to take the intercept 147.813 + (slope of -.620 * 55) to get 113.723. 
+
+## **Part B**
+The creatinine clearance rate decreases by -.620 mL/minute with age. This was found by looking at the slope. 
+
+## **Part C**
+This would be done by comparing the actual clearance rate and the expected ratae for their age. The expected rates are 147.813 - 0.61982 * 40 = 123.020 for the fourty year old and 147.813 - 0.61982 * 60 = 110.624. Then you compare actual with expected by doing 135 - 123.02 = 11.98 and 112 - 110.62 = 1.38. The 40 year old has a healthier creatinine clearence rate for their age because it is about 12 mL/min higher than expected. 
+
+# **Problem 2**
+```{r}
+covid <- read.csv("covid.csv")
+```
+
+
+```{r}
+italy <- covid %>%filter(country == "Italy") %>%
+  mutate(log_deaths = log(deaths))
+
+lm_italy <- lm(log_deaths ~ days_since_first_death, data = italy)
+
+growth_rate <- coef(lm_italy)["days_since_first_death"]
+
+doubling_time<- 70 / (growth_rate*100)
+
+boot_growth_rate <- do(10000) * {
+  resampled_data <- resample(italy)
+  model <- lm(log_deaths ~ days_since_first_death, data = resampled_data)
+  growth_rate_boot <- coef(model)[2]
+  data.frame(growth_rate = growth_rate_boot)
+}
+
+boot_doubling_time <- do(10000) * {
+  Model1 <- lm(log(deaths) ~ days_since_first_death, data = resample(italy))
+    growth_rate_boot <- coef(Model1)[2]
+  data.frame(doubling = 70 / (growth_rate_boot * 100))
+}
+    
+confint(boot_doubling_time)
+
+
+confint(boot_growth_rate)
+
+
+```
+
+The estimated growth rate for Italy is .183 per day and the doubling time is 70/18.3 is approximately 3.8 days. The 95% confidence interval for the growth rate is between 0.159 and 0.209. The 95% confidence interval for the doubling time is between 3.355 and 4.416. 
+
+
+## **Part 3**
+```{r fig.width = 5, fig.height = 3}
+ggplot(covid, aes(x = days_since_first_death, y = deaths, color = country)) + geom_line(size = 1) + labs(title = "Reported daily covid deaths over time", x = "Days since firsth death", y = "Daily Deaths", color = "Country")
+```
+
+
+# **Problem 3**
+```{r}
+milk <- read.csv("milk.csv")
+```
+
+
+```{r}
+model <- lm(log(sales) ~ log(price), data = milk)
+summary(model)
+
+boot_elasticity <- do(10000) * {
+  resampled_data <- resample(milk) 
+  model <- lm(log(sales) ~ log(price), data = resampled_data)
+  elasticity_boot <- coef(model)[2]
+  data.frame(elasticity = elasticity_boot)
+}
+confint(boot_elasticity)
+
+
+
+  
+```
+
+The estimated price elasticity of demand for milk is -1.619. The log of both sales and price is taken. Then a regression model is formed that shows how the percentage change in sales relates to precentage change in price.  
