@@ -1,0 +1,126 @@
+---
+title: "homework_9"
+output: pdf_document
+date: "2025-04-21"
+---
+
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE
+  )
+```
+
+```{r}
+library(ggplot2)
+library(moderndive)
+library(dplyr)
+library(effectsize)
+```
+
+
+```{r}
+solder <- read.csv("solder.csv")
+```
+
+# **Problem 1**
+
+## **Part A**
+```{r}
+ggplot(solder, aes(x = Opening, y = skips))+ geom_boxplot(fill = "lightgreen") + labs(title = "Skips by opening size", x = "Opening size", y ="Number of Skips")
+```
+This box plot shows that solder guns with a smaller opening size have more skips. Solder guns with large opening size have the least amount of skips. 
+
+```{r}
+ggplot(solder, aes(x = Solder, y = skips)) + geom_boxplot(fill = "lightblue") + labs(title = "Skips by thickness", x = "Thickness", y = "Number of Skips")
+```
+This graph shows that thinner alloys have more skips than the thicker ones. 
+
+## **Part B**
+```{r}
+solder$Opening <- as.factor(solder$Opening)
+solder$Solder <- as.factor(solder$Solder)
+model <- lm(skips ~ Opening * Solder, data = solder)
+get_regression_table(model)
+```
+ 
+## **Part C**
+The baseline number of skips for guns with large openings and thick alloy is 0.393 skips. The main effect for using medium opening on the solder gun is 2.407 skips. This means in isolation, switching from large to medium opening with thick alloy increases average number of skips by 2.41. The main effect for using small opening on solder gun is 5.127 skips. This means in isolation, switching from large to small opening with thick alloy increases average by 5.13. The main effect of using thin alloy is 2.28 skips. This means in isolation, switching from thick to thin alloy with large opening increases number of skips by 2.28. The interaction effect for using a medium opening with thin alloy is -.740 skips. This means using a medium opening and thin alloy results in .740 fewer skips than expected. The interaction for using small openng with thin alloy is 9.953. Meaning using small opening with thin alloy results in 9.65 more skips than expectes.      
+ 
+## **Part D**
+I would recommend using a Large solder gun opening with thick alloy. This results in the lowest amount of skips. 
+
+# **Problem 2**
+```{r}
+groceries <- read.csv("groceries.csv")
+```
+
+## **Part A**
+```{r}
+avg_price_by_store <- groceries %>%
+  group_by(Store) %>%
+  summarise(avg_price = mean(Price, na.rm = TRUE))
+
+ggplot(avg_price_by_store, aes(x = Store, y = avg_price)) + geom_col(fill = "pink") + labs(title = "Average Product price by story", x = "Store", y = "Average price") + coord_flip()
+
+head(avg_price_by_store)
+```
+From the graph you can examine that Whole foods has the highest average prices. Fiesta has the lowest average prices. 
+
+# **Part B**
+```{r}
+product_store_count <- groceries %>% 
+  group_by(Product) %>%
+  summarise(count = n())
+
+ggplot(product_store_count, aes(x= Product, y = count)) + geom_bar(stat = "identity", fill = "purple") + coord_flip() + labs(title = "Number of Stores Selling Each product", x = "Number Of stores selling product", y = "Product") 
+
+```
+# **Part C**
+```{r}
+price_model <- lm(Price ~ Product + Type, data = groceries)
+get_regression_table(price_model)
+```
+
+Compared with ordinary grocery stores, convenience stores charge somewhere between $0.41 and $0.92 more for the same product 
+
+## **Part D**
+```{r}
+store_model <- lm(Price~ Product + Store, data = groceries)
+get_regression_table(store_model)
+```
+The stores that charges the least is Walmart at -.993 and Kroger Fresh Fare at -.902. Whole Foods at 0.364 and Wheatsville Food Co-op at 0.290 have the higher costs.  
+
+## **Part E**
+The difference between Central Market which is -.573 and HEB which is -0.646 is 0.073 which is not a big difference. IF you compare this to the highest and lowest, Walmart and Wholefoods, these have a difference of 1.357. 
+
+## **Part F**
+```{r}
+groceries <- groceries %>%
+  mutate(Income10k = Income /10000)
+income_model <- lm(Price~ Product + Income10k, data = groceries)
+get_regression_table(income_model)
+```
+
+Poorer zipcodes pay more for the same product. I know this because the coefficienct for Income10k is negative (-0.014) which means as income increases by $10,000, price decreases by a cent. 
+```{r}
+standardize_parameters(income_model)
+```
+
+
+A one-Standard deciation increase in the income of ZIP code seems to be associated with a -.03 standard deviation decrease in the price that consumers in that ZIP code expect to pay for the same product. 
+
+
+# **Problem 3**
+A .True- Figure A1 shows a positive linear trend between percentage of minoriy residents and the number of FAIR policies. The simple linear regression model shows a positive and significan coefficient for minority with an estimate of 0.014 and the pvalue is 0.
+
+B. Undecidable/Ambiguous- Figure B1 and model_b only show weak and statistically insignificant interaction between housing age and minority percentage. But without an interaction model including both minority, age, and minority:age we can't assume an interaction exists.  
+
+c. False- Figure C1 shows that the slope is steeper for high fire risk ZIP codes, but interaction term in model_c for minority:fire_riskLow is not statistically significant with an estimate of -.001 and pvalue of -.839. This shows that there is no significant difference in the minority fair policy relationship across fire risk groups. 
+
+D. False- In model_D1, the coefficienct for minority is .014 with p value less than .001 and in model_D2 the minority coefficient is still .01 and is statistically significant with a pvalue of .002. This shows that income does not eliminate the association between minority precentage and FIAR policy uptake. 
+
+E. True- In model_E the minority coefficient is 0.008, statistically significant  with p value of .006. THis shows as association between higher minority percerntages and increased reliance on FAIR policies. 
+
